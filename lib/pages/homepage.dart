@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 // import 'package:woocommerce/api_service.dart';
 import 'package:dio/dio.dart';
 import 'package:woocommerce/helper/APIwork.dart';
+import 'package:woocommerce/styles/button-styles.dart';
 import 'package:woocommerce_api/woocommerce_api.dart';
 
 class HomePage extends StatefulWidget {
@@ -20,11 +21,17 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   var _currentIndex = 0;
   final List<Widget> _pages = [
-    HomeScreen(),
     SearchScreen(),
+    HomeScreen(),
     CartScreen(),
     ProfileScreen(),
   ];
+  // final List<Widget> _pages = [
+  //   HomeScreen(),
+  //   SearchScreen(),
+  //   CartScreen(),
+  //   ProfileScreen(),
+  // ];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -114,6 +121,13 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
+// --------- Home Screen -------//
+//
+//
+//
+//
+//
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
@@ -133,435 +147,583 @@ class _HomeScreenState extends State<HomeScreen> {
   late Future<List<FeaturedProduct>> featuredProducts;
   late Future<List<Category>> categories;
 
-  late Future<List<dynamic>> theProducts;
   late Future<List<dynamic>> thenewProducts;
 
   int currentPage = 1;
-  int perPage = 2;
-  bool loadingMore = false;
+  int perPage = 5;
+  String isLoading = 'false';
+
+  // --------------- new Method ------------------//
+  List newMethodProducts = [];
+  List newFeaturedProducts = [];
 
   @override
   void initState() {
     pageController = PageController();
     super.initState();
-    // allProducts = apiWorks.fetchProducts(page: 1, perPage: 10);
     allProducts = apiWorks.fetchProducts(page: currentPage, perPage: perPage);
     categories = apiWorks.fetchCategory();
     featuredProducts = apiWorks.fetchFeaturedProducts();
+
+    // --------------- new Method ------------------//
     scrollController.addListener(_scrollListner);
     _fetchAndStoreProductsJson();
+    _fetchFeaturedProducts();
   }
 
+  // --------------- new Method start ------------------//
   Future<void> _fetchAndStoreProductsJson() async {
-    try {
-      var productsJson = await apiWorks.fetchProductsJson(
-        page: currentPage,
-        perPage: perPage,
-      );
-
-      setState(() {
-        theProducts = Future.value(productsJson);
-      });
-      print((await theProducts).length);
-    } catch (e) {
-      print('Failed to load products: $e');
-    }
+    final json = await apiWorks.fetchProductsJson(currentPage, perPage) as List;
+    // print(json[0]);
+    setState(() {
+      newMethodProducts = json;
+    });
   }
 
-  void _loadMore() async {
-    currentPage++;
-    var newProductsJson = await apiWorks.fetchProductsJson(
-      page: currentPage,
-      perPage: perPage,
-    );
+  Future<void> _fetchFeaturedProducts() async {
+    final myFeaturedProducts = await apiWorks.getFeaturedProducts() as List;
     setState(() {
-      thenewProducts = Future.value(newProductsJson);
-      theProducts = Future.value(theProducts)
-          .then((value) => value..addAll(newProductsJson));
+      newFeaturedProducts = myFeaturedProducts;
     });
-    print(theProducts);
+  }
+
+  Future<List> _loadMore() async {
+    final currentPageIncrease = ++currentPage;
+    final json =
+        await apiWorks.fetchProductsJson(currentPageIncrease, perPage) as List;
+
+    // print(json[0]);
+    return json;
   }
 
   void _scrollListner() {
-    if (scrollController.position.pixels ==
-        scrollController.position.maxScrollExtent) {
-      print('scroll');
+    if (scrollController.position.pixels >
+        scrollController.position.maxScrollExtent - 450) {
+      // print('scroll');
+      if (isLoading == 'false') {
+        setState(() {
+          isLoading = 'true';
+        });
+
+        _loadMore().then((newjson) {
+          setState(() {
+            if (newjson.isNotEmpty) {
+              newMethodProducts.addAll(newjson);
+              isLoading = 'false';
+            } else {
+              isLoading = 'noMore';
+            }
+          });
+        }).catchError((error) {
+          print('Error loading more products: $error');
+          setState(() {
+            isLoading = 'stop';
+          });
+        });
+      } else if (isLoading == 'noMore') {
+        setState(() {
+          isLoading = 'noMore';
+        });
+      }
     }
   }
 
+  // --------------- new Method end------------------//
+
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              height: 200,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/images/banner.jpg'),
-                  fit: BoxFit.cover,
+    return Container(
+      color: Colors.green.shade100,
+      child: SafeArea(
+        child: SingleChildScrollView(
+          controller: scrollController,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                height: 200,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage('assets/images/banner.jpg'),
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Container(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Text(
+                  "Categories",
+                  style: TextStyle(
+                    fontFamily: 'Kanit',
+                    fontSize: 20,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Container(
+                child: Column(
                   children: [
-                    Text(
-                      "Categories",
-                      style: TextStyle(
-                        fontFamily: 'Kanit',
-                        fontSize: 20,
-                        // fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Container(
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: 150,
-                    width: double.infinity,
-                    child: FutureBuilder<List<Category>>(
-                      future: categories,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Center(child: CircularProgressIndicator());
-                        } else if (snapshot.hasError) {
-                          return Center(
-                              child: Text('Error: ${snapshot.error}'));
-                        } else if (!snapshot.hasData ||
-                            snapshot.data!.isEmpty) {
-                          return Center(
-                              child: Text('No categories available.'));
-                        } else {
-                          List<Category> categoryList = snapshot.data!;
+                    SizedBox(
+                      height: 102,
+                      width: double.infinity,
+                      child: FutureBuilder<List<Category>>(
+                        future: categories,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Center(child: CircularProgressIndicator());
+                          } else if (snapshot.hasError) {
+                            return Center(
+                                child: Text('Error: ${snapshot.error}'));
+                          } else if (!snapshot.hasData ||
+                              snapshot.data!.isEmpty) {
+                            return Center(
+                                child: Text('No categories available.'));
+                          } else {
+                            List<Category> categoryList = snapshot.data!;
 
-                          return PageView.builder(
-                            itemCount: categoryList.length,
-                            padEnds: false,
-                            pageSnapping: false,
-                            controller: PageController(
-                              viewportFraction: 0.7,
-                            ),
-                            itemBuilder: (context, index) {
-                              Category category = categoryList[index];
+                            return PageView.builder(
+                              itemCount: categoryList.length,
+                              padEnds: false,
+                              pageSnapping: false,
+                              controller: PageController(
+                                viewportFraction: 0.7,
+                              ),
+                              itemBuilder: (context, index) {
+                                Category category = categoryList[index];
 
-                              return Column(
-                                children: [
-                                  Container(
-                                    height: 100,
-                                    width: double.infinity,
-                                    margin: EdgeInsets.only(
-                                      left: 5.0,
-                                      right: 5.0,
-                                      top: 2.0,
-                                      bottom: 5.0,
-                                    ),
-                                    child: Stack(
-                                      children: [
-                                        Container(
-                                          height: 100,
-                                          decoration: BoxDecoration(
-                                            image: DecorationImage(
-                                              image: category.imageUrl != null
-                                                  ? NetworkImage(
-                                                          category.imageUrl!)
-                                                      as ImageProvider<Object>
-                                                  : AssetImage(
-                                                          'assets/images/dummy-img.png')
-                                                      as ImageProvider<Object>,
-                                              fit: BoxFit.cover,
-                                            ),
-                                            borderRadius:
-                                                BorderRadius.circular(18),
-                                          ),
-                                        ),
-                                        Positioned(
-                                          left: 0,
-                                          right: 0,
-                                          top: 0,
-                                          child: Container(
+                                return Column(
+                                  children: [
+                                    Container(
+                                      height: 100,
+                                      width: double.infinity,
+                                      margin: EdgeInsets.only(
+                                        left: 5.0,
+                                        right: 5.0,
+                                        top: 2.0,
+                                      ),
+                                      child: Stack(
+                                        children: [
+                                          Container(
                                             height: 100,
-                                            width: double.infinity,
-                                            padding: EdgeInsets.all(10),
                                             decoration: BoxDecoration(
-                                              color: Color.fromARGB(
-                                                  162, 37, 114, 41),
-                                              borderRadius: BorderRadius.all(
-                                                Radius.circular(18),
+                                              image: DecorationImage(
+                                                image: category.imageUrl != null
+                                                    ? NetworkImage(
+                                                            category.imageUrl!)
+                                                        as ImageProvider<Object>
+                                                    : AssetImage(
+                                                            'assets/images/dummy-img.png')
+                                                        as ImageProvider<
+                                                            Object>,
+                                                fit: BoxFit.cover,
                                               ),
+                                              borderRadius:
+                                                  BorderRadius.circular(18),
                                             ),
-                                            child: Center(
-                                              child: Text(
-                                                category.name!,
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 16,
-                                                  color: Color.fromARGB(
-                                                      255, 39, 39, 39),
-                                                  decoration:
-                                                      TextDecoration.none,
-                                                  decorationStyle:
-                                                      TextDecorationStyle.solid,
-                                                  shadows: [
-                                                    Shadow(
-                                                      color:
-                                                          Colors.green.shade300,
-                                                      offset: Offset(2, 2),
-                                                      blurRadius: 3,
-                                                    ),
-                                                  ],
+                                          ),
+                                          Positioned(
+                                            left: 0,
+                                            right: 0,
+                                            top: 0,
+                                            child: Container(
+                                              height: 100,
+                                              width: double.infinity,
+                                              padding: EdgeInsets.all(10),
+                                              decoration: BoxDecoration(
+                                                color: Color.fromARGB(
+                                                    162, 37, 114, 41),
+                                                borderRadius: BorderRadius.all(
+                                                  Radius.circular(18),
                                                 ),
-                                                textAlign: TextAlign.center,
                                               ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        }
-                      },
-                    ),
-                  )
-                ],
-              ),
-            ),
-            Container(
-              child: Column(
-                children: [
-                  Container(
-                    child: Text(
-                      'Tranding Products',
-                      style: TextStyle(
-                        fontFamily: 'Kanit',
-                        fontSize: 20,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  )
-                ],
-              ),
-            ),
-            Container(
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: 270,
-                    width: double.infinity,
-                    child: FutureBuilder<List<FeaturedProduct>>(
-                      future: featuredProducts,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Center(child: CircularProgressIndicator());
-                        } else if (snapshot.hasError) {
-                          return Center(
-                              child: Text('Error: ${snapshot.error}'));
-                        } else if (!snapshot.hasData ||
-                            snapshot.data!.isEmpty) {
-                          return Center(
-                            child: Text('No Featured Product available.'),
-                          );
-                        } else {
-                          List<FeaturedProduct> featuredProductsList =
-                              snapshot.data!;
-
-                          return PageView.builder(
-                            itemCount: featuredProductsList.length,
-                            padEnds: false,
-                            pageSnapping: false,
-                            controller: PageController(viewportFraction: 0.7),
-                            itemBuilder: (context, index) {
-                              FeaturedProduct product =
-                                  featuredProductsList[index];
-                              return Column(
-                                children: [
-                                  Container(
-                                    // color: Colors.grey.shade100,
-                                    width: double.infinity,
-                                    margin: EdgeInsets.all(8.0),
-                                    child: Column(
-                                      children: [
-                                        Container(
-                                          height: 150,
-                                          decoration: BoxDecoration(
-                                            image: DecorationImage(
-                                              image: product.imageUrl != null
-                                                  ? NetworkImage(
-                                                          product.imageUrl!)
-                                                      as ImageProvider<Object>
-                                                  : AssetImage(
-                                                          'assets/images/dummy-img.png')
-                                                      as ImageProvider<Object>,
-                                              fit: BoxFit.cover,
-                                            ),
-                                          ),
-                                          child: product.imageUrl != null
-                                              ? Image.network(
-                                                  product.imageUrl!,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (context, error,
-                                                      stackTrace) {
-                                                    return Center(
-                                                      child: Icon(
-                                                        Icons.error_outline,
-                                                        color: Colors.red,
-                                                        size: 40.0,
-                                                      ),
-                                                    );
-                                                  },
-                                                )
-                                              : null,
-                                        ),
-                                        Column(
-                                          children: [
-                                            Container(
-                                              height: 50,
                                               child: Center(
                                                 child: Text(
-                                                  product.name!.length > 32
-                                                      ? '${product.name!.substring(0, 32)}...'
-                                                      : product.name!,
+                                                  category.name!,
                                                   style: TextStyle(
-                                                    fontFamily: 'Kanit',
-                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
+                                                    color: Color.fromARGB(
+                                                        255, 39, 39, 39),
+                                                    decoration:
+                                                        TextDecoration.none,
+                                                    decorationStyle:
+                                                        TextDecorationStyle
+                                                            .solid,
+                                                    shadows: [
+                                                      Shadow(
+                                                        color: Colors
+                                                            .green.shade300,
+                                                        offset: Offset(2, 2),
+                                                        blurRadius: 3,
+                                                      ),
+                                                    ],
                                                   ),
                                                   textAlign: TextAlign.center,
                                                 ),
                                               ),
                                             ),
-                                            Container(
-                                              height: 30,
-                                              width: double.infinity,
-                                              child: product.regularPrice == ""
-                                                  ? Center(
-                                                      child: Text(
-                                                          '₹${product.originalPrice}'),
-                                                    )
-                                                  : Center(
-                                                      child: Container(
-                                                        child: Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .center,
-                                                          children: [
-                                                            Text(
-                                                              '₹${product.regularPrice}',
-                                                              style: TextStyle(
-                                                                decoration:
-                                                                    TextDecoration
-                                                                        .lineThrough,
-                                                              ),
-                                                              textAlign:
-                                                                  TextAlign
-                                                                      .center,
-                                                            ),
-                                                            SizedBox(width: 8),
-                                                            Text(
-                                                              '₹${product.originalPrice}',
-                                                              textAlign:
-                                                                  TextAlign
-                                                                      .center,
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          }
+                        },
+                      ),
+                    )
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Text(
+                  "Trending Products",
+                  style: TextStyle(
+                    fontFamily: 'Kanit',
+                    fontSize: 20,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              //
+
+              Padding(
+                padding: const EdgeInsets.only(left: 10, right: 10),
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: 320,
+                      // width: double.infinity,
+                      child: PageView.builder(
+                        padEnds: false,
+                        pageSnapping: false,
+                        controller: PageController(
+                          viewportFraction: 0.8,
+                        ),
+                        itemCount: newFeaturedProducts.length,
+                        itemBuilder: (context, index) {
+                          final name = newFeaturedProducts[index]['name'];
+                          final regilarPrice =
+                              newFeaturedProducts[index]['regular_price'];
+                          final salePrice =
+                              newFeaturedProducts[index]['sale_price'];
+                          final price = newFeaturedProducts[index]['price'];
+                          final image =
+                              newFeaturedProducts[index]['images'][0]['src'];
+                          final stock =
+                              newFeaturedProducts[index]['in_stock'].toString();
+                          return Padding(
+                            padding: const EdgeInsets.all(1),
+                            child: Container(
+                              margin: EdgeInsets.only(right: 15),
+                              // color: Colors.green.shade200,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                color: Colors.green.shade200,
+                              ),
+                              child: Column(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                        top: 20.0, right: 20, left: 20),
+                                    child: Container(
+                                      height: 150,
+                                      width: MediaQuery.of(context).size.width *
+                                          0.7,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        image: DecorationImage(
+                                          image: image != null
+                                              ? NetworkImage(image)
+                                                  as ImageProvider<Object>
+                                              : AssetImage(
+                                                      'assets/images/dummy-img.png')
+                                                  as ImageProvider<Object>,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                      child: image != null
+                                          ? Image.network(
+                                              image,
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                return Center(
+                                                  child: Icon(
+                                                    Icons.error_outline,
+                                                    color: Colors.red,
+                                                    size: 40.0,
+                                                  ),
+                                                );
+                                              },
+                                            )
+                                          : null,
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                        right: 10, left: 10, top: 20),
+                                    child: Container(
+                                      child: Text(
+                                        name,
+                                        style: TextStyle(
+                                          fontFamily: 'kanit',
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                        bottom: 5, right: 10, left: 10, top: 5),
+                                    child: Container(
+                                      child: (salePrice == "")
+                                          ? Text(
+                                              '₹${price}',
+                                              style: TextStyle(
+                                                fontFamily: 'Kanit',
+                                                fontSize: 12,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            )
+                                          : RichText(
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              text: TextSpan(
+                                                children: [
+                                                  TextSpan(
+                                                    text: '₹${regilarPrice}',
+                                                    style: TextStyle(
+                                                      fontFamily: 'kanit',
+                                                      fontSize: 10,
+                                                      decoration: TextDecoration
+                                                          .lineThrough,
+                                                      color: Colors.red,
                                                     ),
-                                            ),
-                                            Container(
-                                              height: 20,
-                                              child: Text(
-                                                product.stock == 'true'
-                                                    ? ''
-                                                    : 'Out Of Stock',
-                                                style: TextStyle(
-                                                  color: Colors.red,
-                                                  fontSize: 12,
-                                                ),
-                                                textAlign: TextAlign.center,
+                                                  ),
+                                                  TextSpan(
+                                                    text: '  ₹$price',
+                                                    style: TextStyle(
+                                                      fontFamily: 'kanit',
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ),
-                                          ],
-                                        ),
-                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    child: stock == 'true'
+                                        ? Text("")
+                                        : Text(
+                                            'Out of Stock',
+                                            style: TextStyle(
+                                              color: Colors.red,
+                                              fontFamily: 'Kanit',
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 5),
+                                    child: ElevatedButton(
+                                      style: moreDetails,
+                                      onPressed: () {},
+                                      child: Text('See Details'),
                                     ),
                                   )
                                 ],
-                              );
-                            },
+                              ),
+                            ),
                           );
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              child: Column(
-                children: [
-                  Container(
-                    child: Text(
-                      'All Products',
-                      style: TextStyle(
-                        fontFamily: 'Kanit',
-                        fontSize: 20,
+                        },
                       ),
-                      textAlign: TextAlign.center,
                     ),
-                  ),
-                  FutureBuilder<List<dynamic>>(
-                    future: theProducts,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(child: CircularProgressIndicator());
-                      } else if (snapshot.hasError) {
-                        return Center(child: Text('Error: ${snapshot.error}'));
-                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return Center(child: Text('No products available.'));
-                      } else {
-                        List<dynamic> productList = snapshot.data!;
-
-                        return Expanded(
-                          child: ListView.builder(
-                            itemCount: productList.length,
-                            itemBuilder: (context, index) {
-                              var product = productList[index];
-
-                              var productName = product['name'];
-
-                              return ListTile(
-                                title: Text(productName),
-                              );
-                            },
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+
+              //
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Text(
+                  "All Products",
+                  style: TextStyle(
+                    fontFamily: 'Kanit',
+                    fontSize: 20,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: newMethodProducts.length,
+                itemBuilder: (context, index) {
+                  final name = newMethodProducts[index]['name'];
+                  final regilarPrice =
+                      newMethodProducts[index]['regular_price'];
+                  final salePrice = newMethodProducts[index]['sale_price'];
+                  final price = newMethodProducts[index]['price'];
+                  final image = newMethodProducts[index]['images'][0]['src'];
+                  final stock = newMethodProducts[index]['in_stock'].toString();
+                  // print(image);
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 25, right: 25),
+                    child: Container(
+                      margin: EdgeInsets.only(bottom: 20),
+                      // color: Colors.green.shade200,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.green.shade200,
+                      ),
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              top: 20.0,
+                            ),
+                            child: Container(
+                              height: 150,
+                              width: MediaQuery.of(context).size.width * 0.7,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                image: DecorationImage(
+                                  image: image != null
+                                      ? NetworkImage(image)
+                                          as ImageProvider<Object>
+                                      : AssetImage(
+                                              'assets/images/dummy-img.png')
+                                          as ImageProvider<Object>,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              child: image != null
+                                  ? Image.network(
+                                      image,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return Center(
+                                          child: Icon(
+                                            Icons.error_outline,
+                                            color: Colors.red,
+                                            size: 40.0,
+                                          ),
+                                        );
+                                      },
+                                    )
+                                  : null,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(
+                                right: 10, left: 10, top: 20),
+                            child: Container(
+                              child: Text(
+                                name,
+                                style: TextStyle(
+                                  fontFamily: 'kanit',
+                                  fontSize: 16,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(
+                                bottom: 5, right: 10, left: 10, top: 5),
+                            child: Container(
+                              child: (salePrice == "")
+                                  ? Text('₹${price}')
+                                  : RichText(
+                                      text: TextSpan(
+                                        children: [
+                                          TextSpan(
+                                            text: '₹${regilarPrice}',
+                                            style: TextStyle(
+                                              decoration:
+                                                  TextDecoration.lineThrough,
+                                              color: Colors.red,
+                                            ),
+                                          ),
+                                          TextSpan(text: '  ₹$price'),
+                                        ],
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          Container(
+                            child: stock == 'true'
+                                ? Text("")
+                                : Text(
+                                    'Out of Stock',
+                                    style: TextStyle(
+                                      color: Colors.red,
+                                      fontFamily: 'Kanit',
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 25),
+                            child: ElevatedButton(
+                              style: moreDetails,
+                              onPressed: () {},
+                              child: Text('See Details'),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+              Container(
+                child: Center(
+                  child: isLoading == 'true'
+                      ? Container(
+                          width: 30,
+                          height: 30,
+                          child: CircularProgressIndicator(),
+                        )
+                      : isLoading == 'false'
+                          ? Text('')
+                          : Text(
+                              'No More Products',
+                              style:
+                                  TextStyle(fontFamily: 'Kanit', fontSize: 12),
+                              textAlign: TextAlign.center,
+                            ),
+                ),
+              ),
+              SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
   }
 }
+
+//
+//
+//
+//
+//
+//
+// --------- Home Screen -------//
 
 // ------------------ Experimental -----------------//
 
@@ -571,88 +733,84 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  late Future<List<Product>> products;
-  List<Product> displayedProducts = [];
   final APIWorks apiWorks = APIWorks();
 
   @override
   void initState() {
     super.initState();
-    products = fetchData();
-  }
-
-  Future<List<Product>> fetchData() async {
-    try {
-      List<Product> allProducts = await apiWorks.fetchProducts();
-
-      setState(() {
-        displayedProducts = List.from(allProducts);
-      });
-
-      return allProducts; // Return the fetched products
-    } catch (e) {
-      // Handle error as needed
-      return []; // Return an empty list if there's an error
-    }
-  }
-
-  void filterProducts(String query) async {
-    setState(() {
-      displayedProducts = [];
-    });
-
-    try {
-      List<Product> allProducts = await products;
-
-      setState(() {
-        if (query.isEmpty) {
-          displayedProducts = List.from(allProducts);
-        } else {
-          displayedProducts = allProducts
-              .where((product) =>
-                  product.name!.toLowerCase().contains(query.toLowerCase()))
-              .toList();
-        }
-      });
-    } catch (e) {
-      // Handle error as needed
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8.0),
-            child: TextField(
-              onChanged: filterProducts,
-              decoration: InputDecoration(
-                labelText: 'Search Products',
-                prefixIcon: Icon(Icons.search),
+    return SingleChildScrollView(
+      child: Container(
+        color: Colors.green.shade100,
+        width: double.infinity,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(
+                left: 20.0,
+                top: 15.0,
+                bottom: 10.0,
+              ),
+              child: Text(
+                'Search for Products',
+                style: TextStyle(
+                  fontFamily: 'Kanit',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
               ),
             ),
-          ),
-          Expanded(
-            child: displayedProducts.isEmpty
-                ? Center(
-                    child: products == null
-                        ? CircularProgressIndicator()
-                        : Text('No products match your search'),
-                  )
-                : ListView.builder(
-                    itemCount: displayedProducts.length,
-                    itemBuilder: (context, index) {
-                      Product product = displayedProducts[index];
-                      return ListTile(
-                        title: Text(product.name!),
-                        subtitle: Text('₹' + product.price!),
-                      );
-                    },
+            Container(
+              margin: EdgeInsets.only(left: 20),
+              width: MediaQuery.of(context).size.width * .85,
+              height: 35,
+              child: TextField(
+                style: TextStyle(
+                  fontFamily: 'Kanit',
+                  fontSize: 12,
+                ),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.green.shade200,
+                  hintText: "eg: Apple iPhone 12",
+                  hintStyle: TextStyle(
+                    fontFamily: 'Kanit',
+                    fontSize: 14,
                   ),
-          ),
-        ],
+                  contentPadding: EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 10,
+                  ),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    size: 12,
+                  ),
+                ),
+              ),
+            ),
+            ListView.builder(
+              physics: NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: 50,
+              scrollDirection: Axis.vertical,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text(index.toString()),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

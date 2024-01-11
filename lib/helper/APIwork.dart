@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element
+
 import 'package:woocommerce/pages/homepage.dart';
 import 'package:woocommerce_api/woocommerce_api.dart';
 
@@ -15,18 +17,22 @@ class APIWorks {
       consumerSecret: consumerSecret,
     );
   }
-  fetchProductsJson({int? page, int? perPage}) async {
-    try {
-      dynamic productsJson;
 
-      if (page != null && perPage != null) {
-        productsJson =
-            await wooCommerce.getAsync('products?page=$page&per_page=$perPage');
-      } else {
-        productsJson = await wooCommerce.getAsync('products');
-      }
+  fetchProductsJson(currentPage, perPage) async {
+    try {
+      final productsJson =
+          wooCommerce.getAsync('products?page=$currentPage&per_page=$perPage');
 
       return productsJson;
+    } catch (e) {
+      throw Exception('Failed to load products: $e');
+    }
+  }
+
+  getFeaturedProducts() async {
+    try {
+      final myFeaturedProducts = wooCommerce.getAsync('products?featured=true');
+      return myFeaturedProducts;
     } catch (e) {
       throw Exception('Failed to load products: $e');
     }
@@ -46,8 +52,6 @@ class APIWorks {
       List<Product> productList = (productsJson as List<dynamic>)
           .map((json) => Product.fromJson(json as Map<String, dynamic>))
           .toList();
-
-      print('${productList.length} products loaded.');
       return productList;
     } catch (e) {
       throw Exception('Failed to load products: $e');
