@@ -7,6 +7,10 @@ class APIWorks {
   final String baseUrl = 'http://dinesh/woocom';
   final String consumerKey = 'ck_b19054371ef70980d1e72c916270533e8d85e267';
   final String consumerSecret = 'cs_ffd3db8003cc760c9025c5da768659342d1c1f09';
+  // final String baseUrl =
+  //     'http://suvasis-creative-interior-design.great-site.net/woocom';
+  // final String consumerKey = 'ck_a3275fcf3ce72da7177c187b4bfb7738064d71fa';
+  // final String consumerSecret = 'cs_34eef44637c4d922552a503b128b6338d6da7169';
 
   late WooCommerceAPI wooCommerce;
 
@@ -25,6 +29,17 @@ class APIWorks {
 
       return productsJson;
     } catch (e) {
+      print(e);
+      return 'error';
+    }
+  }
+
+  searchProductJson(value) async {
+    try {
+      final productsJson = wooCommerce.getAsync('products?search=$value');
+
+      return productsJson;
+    } catch (e) {
       throw Exception('Failed to load products: $e');
     }
   }
@@ -34,7 +49,7 @@ class APIWorks {
       final myFeaturedProducts = wooCommerce.getAsync('products?featured=true');
       return myFeaturedProducts;
     } catch (e) {
-      throw Exception('Failed to load products: $e');
+      return 'erroroccur';
     }
   }
 

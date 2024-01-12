@@ -1,6 +1,7 @@
-// ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors, avoid_unnecessary_containers, sized_box_for_whitespace, use_key_in_widget_constructors, prefer_interpolation_to_compose_strings, unused_import, unused_local_variable, prefer_const_declarations, unnecessary_string_interpolations, unnecessary_cast, unnecessary_null_comparison, prefer_if_null_operators, empty_catches, avoid_print, unnecessary_brace_in_string_interps, void_checks, unused_element
+// ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors, avoid_unnecessary_containers, sized_box_for_whitespace, use_key_in_widget_constructors, prefer_interpolation_to_compose_strings, unused_import, unused_local_variable, prefer_const_declarations, unnecessary_string_interpolations, unnecessary_cast, unnecessary_null_comparison, prefer_if_null_operators, empty_catches, avoid_print, unnecessary_brace_in_string_interps, void_checks, unused_element, unrelated_type_equality_checks
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import 'package:http/http.dart' as http;
 // import 'package:woocommerce/api_service.dart';
 import 'package:dio/dio.dart';
 import 'package:woocommerce/helper/APIwork.dart';
+import 'package:woocommerce/pages/productpage.dart';
 import 'package:woocommerce/styles/button-styles.dart';
 import 'package:woocommerce_api/woocommerce_api.dart';
 
@@ -21,57 +23,22 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   var _currentIndex = 0;
   final List<Widget> _pages = [
-    SearchScreen(),
     HomeScreen(),
+    SearchScreen(),
     CartScreen(),
     ProfileScreen(),
   ];
-  // final List<Widget> _pages = [
-  //   HomeScreen(),
-  //   SearchScreen(),
-  //   CartScreen(),
-  //   ProfileScreen(),
-  // ];
+
+  void updateCurrentIndex(int newIndex) {
+    setState(() {
+      _currentIndex = newIndex;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.green.shade400,
-        title: Container(
-          // color: Colors.green.shade400,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Woocom",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 25,
-                  fontFamily: 'Kanit',
-                ),
-              ),
-              Row(
-                children: [
-                  // TextButton(
-                  //   onPressed: () {},
-                  //   child: Icon(
-                  //     Icons.search,
-                  //     color: Colors.black,
-                  //   ),
-                  // ),
-                  TextButton(
-                    onPressed: () {},
-                    child: Icon(
-                      Icons.shopping_cart_outlined,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+    var scaffold = Scaffold(
+      appBar: screenAppBar(),
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.yellow[50],
@@ -118,15 +85,9 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
     );
+    return scaffold;
   }
 }
-
-// --------- Home Screen -------//
-//
-//
-//
-//
-//
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -156,6 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // --------------- new Method ------------------//
   List newMethodProducts = [];
   List newFeaturedProducts = [];
+  bool fetchComplete = false;
 
   @override
   void initState() {
@@ -174,7 +136,6 @@ class _HomeScreenState extends State<HomeScreen> {
   // --------------- new Method start ------------------//
   Future<void> _fetchAndStoreProductsJson() async {
     final json = await apiWorks.fetchProductsJson(currentPage, perPage) as List;
-    // print(json[0]);
     setState(() {
       newMethodProducts = json;
     });
@@ -218,6 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
           print('Error loading more products: $error');
           setState(() {
             isLoading = 'stop';
+            fetchComplete = true;
           });
         });
       } else if (isLoading == 'noMore') {
@@ -275,7 +237,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             return Center(child: CircularProgressIndicator());
                           } else if (snapshot.hasError) {
                             return Center(
-                                child: Text('Error: ${snapshot.error}'));
+                              child: Center(
+                                child: Text(
+                                    'Unable To Fetch Category, Please Try Again'),
+                              ),
+                            );
                           } else if (!snapshot.hasData ||
                               snapshot.data!.isEmpty) {
                             return Center(
@@ -391,168 +357,220 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               //
-
-              Padding(
-                padding: const EdgeInsets.only(left: 10, right: 10),
-                child: Column(
-                  children: [
-                    SizedBox(
-                      height: 320,
-                      // width: double.infinity,
-                      child: PageView.builder(
-                        padEnds: false,
-                        pageSnapping: false,
-                        controller: PageController(
-                          viewportFraction: 0.8,
-                        ),
-                        itemCount: newFeaturedProducts.length,
-                        itemBuilder: (context, index) {
-                          final name = newFeaturedProducts[index]['name'];
-                          final regilarPrice =
-                              newFeaturedProducts[index]['regular_price'];
-                          final salePrice =
-                              newFeaturedProducts[index]['sale_price'];
-                          final price = newFeaturedProducts[index]['price'];
-                          final image =
-                              newFeaturedProducts[index]['images'][0]['src'];
-                          final stock =
-                              newFeaturedProducts[index]['in_stock'].toString();
-                          return Padding(
-                            padding: const EdgeInsets.all(1),
-                            child: Container(
-                              margin: EdgeInsets.only(right: 15),
-                              // color: Colors.green.shade200,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                color: Colors.green.shade200,
+              newFeaturedProducts.isEmpty
+                  ? fetchComplete
+                      ? Center(
+                          child: Text(
+                            'No Products Available or Something went wrong, please try again',
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      : Center(
+                          child: CircularProgressIndicator(),
+                        )
+                  : Padding(
+                      padding: const EdgeInsets.only(left: 10, right: 10),
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            height: 320,
+                            // width: double.infinity,
+                            child: PageView.builder(
+                              padEnds: false,
+                              pageSnapping: false,
+                              controller: PageController(
+                                viewportFraction: 0.8,
                               ),
-                              child: Column(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                        top: 20.0, right: 20, left: 20),
+                              itemCount: newFeaturedProducts.length,
+                              itemBuilder: (context, index) {
+                                final name = newFeaturedProducts[index]['name'];
+                                final regilarPrice =
+                                    newFeaturedProducts[index]['regular_price'];
+                                final salePrice =
+                                    newFeaturedProducts[index]['sale_price'];
+                                final price =
+                                    newFeaturedProducts[index]['price'];
+                                final image = newFeaturedProducts[index]
+                                    ['images'][0]['src'];
+                                final stock = newFeaturedProducts[index]
+                                        ['in_stock']
+                                    .toString();
+                                return GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ProductScreen(
+                                          productId: newFeaturedProducts[index]
+                                              ['id'],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(1),
                                     child: Container(
-                                      height: 150,
-                                      width: MediaQuery.of(context).size.width *
-                                          0.7,
+                                      margin: EdgeInsets.only(right: 15),
+                                      // color: Colors.green.shade200,
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(10),
-                                        image: DecorationImage(
-                                          image: image != null
-                                              ? NetworkImage(image)
-                                                  as ImageProvider<Object>
-                                              : AssetImage(
-                                                      'assets/images/dummy-img.png')
-                                                  as ImageProvider<Object>,
-                                          fit: BoxFit.cover,
-                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                        color: Colors.green.shade200,
                                       ),
-                                      child: image != null
-                                          ? Image.network(
-                                              image,
-                                              fit: BoxFit.cover,
-                                              errorBuilder:
-                                                  (context, error, stackTrace) {
-                                                return Center(
-                                                  child: Icon(
-                                                    Icons.error_outline,
-                                                    color: Colors.red,
-                                                    size: 40.0,
-                                                  ),
-                                                );
-                                              },
-                                            )
-                                          : null,
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                        right: 10, left: 10, top: 20),
-                                    child: Container(
-                                      child: Text(
-                                        name,
-                                        style: TextStyle(
-                                          fontFamily: 'kanit',
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                        bottom: 5, right: 10, left: 10, top: 5),
-                                    child: Container(
-                                      child: (salePrice == "")
-                                          ? Text(
-                                              '₹${price}',
-                                              style: TextStyle(
-                                                fontFamily: 'Kanit',
-                                                fontSize: 12,
+                                      child: Column(
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                top: 20.0, right: 20, left: 20),
+                                            child: Container(
+                                              height: 150,
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.7,
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                                image: DecorationImage(
+                                                  image: image != null
+                                                      ? NetworkImage(image)
+                                                          as ImageProvider<
+                                                              Object>
+                                                      : AssetImage(
+                                                              'assets/images/dummy-img.png')
+                                                          as ImageProvider<
+                                                              Object>,
+                                                  fit: BoxFit.cover,
+                                                ),
                                               ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            )
-                                          : RichText(
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              text: TextSpan(
-                                                children: [
-                                                  TextSpan(
-                                                    text: '₹${regilarPrice}',
-                                                    style: TextStyle(
-                                                      fontFamily: 'kanit',
-                                                      fontSize: 10,
-                                                      decoration: TextDecoration
-                                                          .lineThrough,
-                                                      color: Colors.red,
+                                              child: image != null
+                                                  ? Image.network(
+                                                      image,
+                                                      fit: BoxFit.cover,
+                                                      errorBuilder: (context,
+                                                          error, stackTrace) {
+                                                        return Center(
+                                                          child: Icon(
+                                                            Icons.error_outline,
+                                                            color: Colors.red,
+                                                            size: 40.0,
+                                                          ),
+                                                        );
+                                                      },
+                                                    )
+                                                  : null,
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                right: 10, left: 10, top: 20),
+                                            child: Container(
+                                              child: Text(
+                                                name,
+                                                style: TextStyle(
+                                                  fontFamily: 'kanit',
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                bottom: 5,
+                                                right: 10,
+                                                left: 10,
+                                                top: 5),
+                                            child: Container(
+                                              child: (salePrice == "")
+                                                  ? Text(
+                                                      '₹${price}',
+                                                      style: TextStyle(
+                                                        fontFamily: 'Kanit',
+                                                        fontSize: 12,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    )
+                                                  : RichText(
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      text: TextSpan(
+                                                        children: [
+                                                          TextSpan(
+                                                            text:
+                                                                '₹${regilarPrice}',
+                                                            style: TextStyle(
+                                                              fontFamily:
+                                                                  'kanit',
+                                                              fontSize: 10,
+                                                              decoration:
+                                                                  TextDecoration
+                                                                      .lineThrough,
+                                                              color: Colors.red,
+                                                            ),
+                                                          ),
+                                                          TextSpan(
+                                                            text: '  ₹$price',
+                                                            style: TextStyle(
+                                                              fontFamily:
+                                                                  'kanit',
+                                                              fontSize: 12,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
                                                     ),
-                                                  ),
-                                                  TextSpan(
-                                                    text: '  ₹$price',
+                                            ),
+                                          ),
+                                          Container(
+                                            child: stock == 'true'
+                                                ? Text("")
+                                                : Text(
+                                                    'Out of Stock',
                                                     style: TextStyle(
-                                                      fontFamily: 'kanit',
+                                                      color: Colors.red,
+                                                      fontFamily: 'Kanit',
                                                       fontSize: 12,
                                                     ),
                                                   ),
-                                                ],
-                                              ),
-                                            ),
-                                    ),
-                                  ),
-                                  Container(
-                                    child: stock == 'true'
-                                        ? Text("")
-                                        : Text(
-                                            'Out of Stock',
-                                            style: TextStyle(
-                                              color: Colors.red,
-                                              fontFamily: 'Kanit',
-                                              fontSize: 12,
-                                            ),
                                           ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 5),
-                                    child: ElevatedButton(
-                                      style: moreDetails,
-                                      onPressed: () {},
-                                      child: Text('See Details'),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                bottom: 5),
+                                            child: ElevatedButton(
+                                              style: moreDetails,
+                                              onPressed: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        ProductScreen(
+                                                      productId:
+                                                          newFeaturedProducts[
+                                                              index]['id'],
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              child: Text('See Details'),
+                                            ),
+                                          )
+                                        ],
+                                      ),
                                     ),
-                                  )
-                                ],
-                              ),
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
 
               //
               Padding(
@@ -581,110 +599,132 @@ class _HomeScreenState extends State<HomeScreen> {
                   // print(image);
                   return Padding(
                     padding: const EdgeInsets.only(left: 25, right: 25),
-                    child: Container(
-                      margin: EdgeInsets.only(bottom: 20),
-                      // color: Colors.green.shade200,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: Colors.green.shade200,
-                      ),
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              top: 20.0,
-                            ),
-                            child: Container(
-                              height: 150,
-                              width: MediaQuery.of(context).size.width * 0.7,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                image: DecorationImage(
-                                  image: image != null
-                                      ? NetworkImage(image)
-                                          as ImageProvider<Object>
-                                      : AssetImage(
-                                              'assets/images/dummy-img.png')
-                                          as ImageProvider<Object>,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              child: image != null
-                                  ? Image.network(
-                                      image,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                        return Center(
-                                          child: Icon(
-                                            Icons.error_outline,
-                                            color: Colors.red,
-                                            size: 40.0,
-                                          ),
-                                        );
-                                      },
-                                    )
-                                  : null,
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ProductScreen(
+                              productId: newMethodProducts[index]['id'],
                             ),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.only(
-                                right: 10, left: 10, top: 20),
-                            child: Container(
-                              child: Text(
-                                name,
-                                style: TextStyle(
-                                  fontFamily: 'kanit',
-                                  fontSize: 16,
-                                ),
-                                textAlign: TextAlign.center,
+                        );
+                      },
+                      child: Container(
+                        margin: EdgeInsets.only(bottom: 20),
+                        // color: Colors.green.shade200,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.green.shade200,
+                        ),
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                top: 20.0,
                               ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(
-                                bottom: 5, right: 10, left: 10, top: 5),
-                            child: Container(
-                              child: (salePrice == "")
-                                  ? Text('₹${price}')
-                                  : RichText(
-                                      text: TextSpan(
-                                        children: [
-                                          TextSpan(
-                                            text: '₹${regilarPrice}',
-                                            style: TextStyle(
-                                              decoration:
-                                                  TextDecoration.lineThrough,
+                              child: Container(
+                                height: 150,
+                                width: MediaQuery.of(context).size.width * 0.7,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  image: DecorationImage(
+                                    image: image != null
+                                        ? NetworkImage(image)
+                                            as ImageProvider<Object>
+                                        : AssetImage(
+                                                'assets/images/dummy-img.png')
+                                            as ImageProvider<Object>,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                child: image != null
+                                    ? Image.network(
+                                        image,
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                          return Center(
+                                            child: Icon(
+                                              Icons.error_outline,
                                               color: Colors.red,
+                                              size: 40.0,
                                             ),
-                                          ),
-                                          TextSpan(text: '  ₹$price'),
-                                        ],
+                                          );
+                                        },
+                                      )
+                                    : null,
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  right: 10, left: 10, top: 20),
+                              child: Container(
+                                child: Text(
+                                  name,
+                                  style: TextStyle(
+                                    fontFamily: 'kanit',
+                                    fontSize: 16,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  bottom: 5, right: 10, left: 10, top: 5),
+                              child: Container(
+                                child: (salePrice == "")
+                                    ? Text('₹${price}')
+                                    : RichText(
+                                        text: TextSpan(
+                                          children: [
+                                            TextSpan(
+                                              text: '₹${regilarPrice}',
+                                              style: TextStyle(
+                                                decoration:
+                                                    TextDecoration.lineThrough,
+                                                color: Colors.red,
+                                              ),
+                                            ),
+                                            TextSpan(text: '  ₹$price'),
+                                          ],
+                                        ),
+                                      ),
+                              ),
+                            ),
+                            Container(
+                              child: stock == 'true'
+                                  ? Text("")
+                                  : Text(
+                                      'Out of Stock',
+                                      style: TextStyle(
+                                        color: Colors.red,
+                                        fontFamily: 'Kanit',
+                                        fontSize: 12,
                                       ),
                                     ),
                             ),
-                          ),
-                          Container(
-                            child: stock == 'true'
-                                ? Text("")
-                                : Text(
-                                    'Out of Stock',
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontFamily: 'Kanit',
-                                      fontSize: 12,
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 25),
+                              child: ElevatedButton(
+                                style: moreDetails,
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ProductScreen(
+                                        productId: newMethodProducts[index]
+                                            ['id'],
+                                      ),
                                     ),
-                                  ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 25),
-                            child: ElevatedButton(
-                              style: moreDetails,
-                              onPressed: () {},
-                              child: Text('See Details'),
+                                  );
+                                },
+                                child: Text('See Details'),
+                              ),
                             ),
-                          )
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   );
@@ -717,16 +757,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-//
-//
-//
-//
-//
-//
-// --------- Home Screen -------//
-
-// ------------------ Experimental -----------------//
-
 class SearchScreen extends StatefulWidget {
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -734,83 +764,226 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final APIWorks apiWorks = APIWorks();
+  List searchedProducts = [];
 
   @override
   void initState() {
     super.initState();
+    _fetchAndStoreProductsJson();
+  }
+
+  Future<void> _fetchAndStoreProductsJson() async {
+    final json = await apiWorks.fetchProductsJson(1, 20) as List;
+    setState(() {
+      searchedProducts = json;
+    });
+  }
+
+  bool isSearching = false;
+
+  Future<void> filterProduct(String value) async {
+    setState(() {
+      isSearching = true;
+    });
+
+    try {
+      final json = await apiWorks.searchProductJson(value) as List;
+
+      setState(() {
+        searchedProducts = json;
+      });
+    } finally {
+      setState(() {
+        isSearching = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Container(
-        color: Colors.green.shade100,
-        width: double.infinity,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(
-                left: 20.0,
-                top: 15.0,
-                bottom: 10.0,
-              ),
-              child: Text(
-                'Search for Products',
-                style: TextStyle(
-                  fontFamily: 'Kanit',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black,
-                ),
-              ),
-            ),
-            Container(
-              margin: EdgeInsets.only(left: 20),
-              width: MediaQuery.of(context).size.width * .85,
-              height: 35,
-              child: TextField(
-                style: TextStyle(
-                  fontFamily: 'Kanit',
-                  fontSize: 12,
-                ),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.green.shade200,
-                  hintText: "eg: Apple iPhone 12",
-                  hintStyle: TextStyle(
+    return Container(
+      color: Colors.green.shade100,
+      child: ListView(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding:
+                    const EdgeInsets.only(left: 20.0, top: 15.0, bottom: 10.0),
+                child: Text(
+                  'Search for Products',
+                  style: TextStyle(
                     fontFamily: 'Kanit',
-                    fontSize: 14,
-                  ),
-                  contentPadding: EdgeInsets.symmetric(
-                    vertical: 8,
-                    horizontal: 10,
-                  ),
-                  border: OutlineInputBorder(
-                    borderSide: BorderSide.none,
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  prefixIcon: Icon(
-                    Icons.search,
-                    size: 12,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black,
                   ),
                 ),
               ),
-            ),
-            ListView.builder(
-              physics: NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              itemCount: 50,
-              scrollDirection: Axis.vertical,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(index.toString()),
-                );
-              },
-            ),
-          ],
-        ),
+              Container(
+                margin: EdgeInsets.only(left: 20),
+                width: MediaQuery.of(context).size.width * .85,
+                height: 35,
+                child: TextField(
+                  style: TextStyle(
+                    fontFamily: 'Kanit',
+                    fontSize: 12,
+                  ),
+                  onChanged: (value) {
+                    filterProduct(value);
+                  },
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.green.shade200,
+                    hintText: "eg: Apple iPhone 12",
+                    hintStyle: TextStyle(
+                      fontFamily: 'Kanit',
+                      fontSize: 14,
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 10,
+                    ),
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      size: 12,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Padding(
+            padding: EdgeInsets.only(top: 15.0),
+            child: isSearching
+                ? Center(
+                    child: Container(
+                      margin: EdgeInsets.only(
+                        top: 150,
+                      ),
+                      height: 50,
+                      width: 50,
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                : ListView.builder(
+                    physics: NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    itemCount: searchedProducts.length,
+                    itemBuilder: (context, index) {
+                      final name = searchedProducts[index]['name'];
+                      final regilarPrice =
+                          searchedProducts[index]['regular_price'];
+                      final salePrice = searchedProducts[index]['sale_price'];
+                      final price = searchedProducts[index]['price'];
+                      final image = searchedProducts[index]['images'][0]['src'];
+                      final stock =
+                          searchedProducts[index]['in_stock'].toString();
+                      return Container(
+                        child: ListTile(
+                          title: Text(
+                            name,
+                            maxLines: 2,
+                            style: TextStyle(
+                              fontFamily: 'Kanit',
+                              fontSize: 14,
+                            ),
+                          ),
+                          subtitle: (salePrice == "")
+                              ? Text(
+                                  '₹${price}',
+                                  style: TextStyle(
+                                    fontFamily: 'Kanit',
+                                    fontSize: 12,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                )
+                              : RichText(
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  text: TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text: '₹${regilarPrice}',
+                                        style: TextStyle(
+                                          fontFamily: 'kanit',
+                                          fontSize: 10,
+                                          decoration:
+                                              TextDecoration.lineThrough,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                      TextSpan(
+                                        text: '  ₹$price',
+                                        style: TextStyle(
+                                          fontFamily: 'kanit',
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                          leading: Container(
+                            height: 150,
+                            width: 60,
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: image != null
+                                    ? NetworkImage(image)
+                                        as ImageProvider<Object>
+                                    : AssetImage('assets/images/dummy-img.png'),
+                                fit: BoxFit.fitHeight,
+                              ),
+                            ),
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ProductScreen(
+                                  productId: searchedProducts[index]['id'],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          !isSearching
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 10, bottom: 10),
+                    child: Container(
+                      height: 30,
+                      width: 120,
+                      child: ElevatedButton(
+                        style: seeAllProduct,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => HomeScreen(),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'All Products',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              : Text(''),
+        ],
       ),
     );
   }
@@ -929,4 +1102,44 @@ class FeaturedProduct {
     );
   }
 }
+
 // --------------- Models -----------------//
+AppBar screenAppBar() {
+  return AppBar(
+    backgroundColor: Colors.green.shade400,
+    title: Container(
+      // color: Colors.green.shade400,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            "Woocom",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 25,
+              fontFamily: 'Kanit',
+            ),
+          ),
+          Row(
+            children: [
+              // TextButton(
+              //   onPressed: () {},
+              //   child: Icon(
+              //     Icons.search,
+              //     color: Colors.black,
+              //   ),
+              // ),
+              TextButton(
+                onPressed: () {},
+                child: Icon(
+                  Icons.shopping_cart_outlined,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}

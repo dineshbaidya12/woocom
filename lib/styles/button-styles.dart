@@ -14,3 +14,14 @@ final ButtonStyle moreDetails = ElevatedButton.styleFrom(
     ),
   ),
 );
+final ButtonStyle seeAllProduct = ElevatedButton.styleFrom(
+  minimumSize: const Size(120, 30),
+  backgroundColor: const Color.fromARGB(255, 7, 111, 172),
+  elevation: 0,
+  foregroundColor: Colors.black,
+  shape: const RoundedRectangleBorder(
+    borderRadius: BorderRadius.all(
+      Radius.circular(5),
+    ),
+  ),
+);
