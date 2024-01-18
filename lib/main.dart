@@ -18,9 +18,7 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Kanit',
         primaryColor: Colors.red,
       ),
-      home: const ProductScreen(
-        productId: 587,
-      ),
+      home: const HomePage(),
     );
   }
 }

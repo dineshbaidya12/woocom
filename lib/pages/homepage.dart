@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 // import 'package:woocommerce/api_service.dart';
 import 'package:dio/dio.dart';
 import 'package:woocommerce/helper/APIwork.dart';
+import 'package:woocommerce/manage_cart.dart';
 import 'package:woocommerce/pages/productpage.dart';
 import 'package:woocommerce/styles/button-styles.dart';
 import 'package:woocommerce_api/woocommerce_api.dart';
@@ -23,15 +24,26 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   var _currentIndex = 0;
   late List<Widget> _pages;
+  ManageCart cart = ManageCart();
+  int cartItemsCount = 0;
+
   @override
   void initState() {
     super.initState();
+    __getCartProducts();
     _pages = [
-      HomeScreen(),
+      HomeScreen(updateCartCounts: updateCartCount),
       SearchScreen(updateCurrentIndex: updateCurrentIndex),
       CartScreen(),
       ProfileScreen(),
     ];
+  }
+
+  __getCartProducts() async {
+    int cartItems = await cart.countCartProduct();
+    setState(() {
+      cartItemsCount = cartItems;
+    });
   }
 
   void updateCurrentIndex(int newIndex) {
@@ -40,10 +52,16 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void updateCartCount(int count) {
+    setState(() {
+      cartItemsCount = count;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     var scaffold = Scaffold(
-      appBar: screenAppBar(12),
+      appBar: screenAppBar(cartItemsCount),
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.yellow[50],
@@ -95,9 +113,9 @@ class _HomePageState extends State<HomePage> {
 }
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({
-    super.key,
-  });
+  final Function(int) updateCartCounts;
+
+  HomeScreen({required this.updateCartCounts});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -408,6 +426,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                         builder: (context) => ProductScreen(
                                           productId: newFeaturedProducts[index]
                                               ['id'],
+                                          updateCartCountCallback:
+                                              widget.updateCartCounts,
                                         ),
                                       ),
                                     );
@@ -1107,6 +1127,7 @@ class FeaturedProduct {
 }
 
 // --------------- Models -----------------//
+
 AppBar screenAppBar(int cartItemCount) {
   return AppBar(
     automaticallyImplyLeading: false,
