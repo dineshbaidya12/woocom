@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:woocommerce/pages/homepage.dart';
+import 'package:woocommerce/pages/productpage.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,7 +18,9 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Kanit',
         primaryColor: Colors.red,
       ),
-      home: const HomePage(),
+      home: const ProductScreen(
+        productId: 587,
+      ),
     );
   }
 }

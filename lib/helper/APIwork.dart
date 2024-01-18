@@ -34,6 +34,16 @@ class APIWorks {
     }
   }
 
+  fetchProductDetails(productId) async {
+    try {
+      final productsJson = wooCommerce.getAsync('products/$productId');
+      return productsJson;
+    } catch (e) {
+      print(e);
+      return 'error';
+    }
+  }
+
   searchProductJson(value) async {
     try {
       final productsJson = wooCommerce.getAsync('products?search=$value');

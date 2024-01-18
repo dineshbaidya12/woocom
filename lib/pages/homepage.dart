@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors, avoid_unnecessary_containers, sized_box_for_whitespace, use_key_in_widget_constructors, prefer_interpolation_to_compose_strings, unused_import, unused_local_variable, prefer_const_declarations, unnecessary_string_interpolations, unnecessary_cast, unnecessary_null_comparison, prefer_if_null_operators, empty_catches, avoid_print, unnecessary_brace_in_string_interps, void_checks, unused_element, unrelated_type_equality_checks
+// ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors, avoid_unnecessary_containers, sized_box_for_whitespace, use_key_in_widget_constructors, prefer_interpolation_to_compose_strings, unused_import, unused_local_variable, prefer_const_declarations, unnecessary_string_interpolations, unnecessary_cast, unnecessary_null_comparison, prefer_if_null_operators, empty_catches, avoid_print, unnecessary_brace_in_string_interps, void_checks, unused_element, unrelated_type_equality_checks, prefer_const_constructors_in_immutables
 
 import 'dart:convert';
 import 'dart:io';
@@ -22,12 +22,17 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   var _currentIndex = 0;
-  final List<Widget> _pages = [
-    HomeScreen(),
-    SearchScreen(),
-    CartScreen(),
-    ProfileScreen(),
-  ];
+  late List<Widget> _pages;
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      HomeScreen(),
+      SearchScreen(updateCurrentIndex: updateCurrentIndex),
+      CartScreen(),
+      ProfileScreen(),
+    ];
+  }
 
   void updateCurrentIndex(int newIndex) {
     setState(() {
@@ -38,7 +43,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     var scaffold = Scaffold(
-      appBar: screenAppBar(),
+      appBar: screenAppBar(12),
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.yellow[50],
@@ -758,6 +763,9 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class SearchScreen extends StatefulWidget {
+  final Function(int) updateCurrentIndex;
+
+  SearchScreen({required this.updateCurrentIndex});
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
@@ -967,12 +975,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       child: ElevatedButton(
                         style: seeAllProduct,
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => HomeScreen(),
-                            ),
-                          );
+                          widget.updateCurrentIndex(0);
                         },
                         child: Text(
                           'All Products',
@@ -1104,11 +1107,11 @@ class FeaturedProduct {
 }
 
 // --------------- Models -----------------//
-AppBar screenAppBar() {
+AppBar screenAppBar(int cartItemCount) {
   return AppBar(
+    automaticallyImplyLeading: false,
     backgroundColor: Colors.green.shade400,
     title: Container(
-      // color: Colors.green.shade400,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -1120,22 +1123,40 @@ AppBar screenAppBar() {
               fontFamily: 'Kanit',
             ),
           ),
-          Row(
+          Stack(
+            alignment: Alignment.topRight,
             children: [
-              // TextButton(
-              //   onPressed: () {},
-              //   child: Icon(
-              //     Icons.search,
-              //     color: Colors.black,
-              //   ),
-              // ),
-              TextButton(
+              IconButton(
                 onPressed: () {},
-                child: Icon(
+                icon: Icon(
                   Icons.shopping_cart_outlined,
                   color: Colors.black,
                 ),
               ),
+              if (cartItemCount > 0)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    padding: EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color.fromARGB(255, 255, 255, 255),
+                    ),
+                    child: Padding(
+                      padding: cartItemCount > 9
+                          ? EdgeInsets.all(1.0)
+                          : EdgeInsets.all(3.0),
+                      child: Text(
+                        cartItemCount > 99 ? '99+' : '$cartItemCount',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: cartItemCount > 99 ? 10 : 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ],
