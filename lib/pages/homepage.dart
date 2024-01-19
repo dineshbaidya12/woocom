@@ -1,11 +1,10 @@
-// ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors, avoid_unnecessary_containers, sized_box_for_whitespace, use_key_in_widget_constructors, prefer_interpolation_to_compose_strings, unused_import, unused_local_variable, prefer_const_declarations, unnecessary_string_interpolations, unnecessary_cast, unnecessary_null_comparison, prefer_if_null_operators, empty_catches, avoid_print, unnecessary_brace_in_string_interps, void_checks, unused_element, unrelated_type_equality_checks, prefer_const_constructors_in_immutables
+// ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors, avoid_unnecessary_containers, sized_box_for_whitespace, use_key_in_widget_constructors, prefer_interpolation_to_compose_strings, unused_import, unused_local_variable, prefer_const_declarations, unnecessary_string_interpolations, unnecessary_cast, unnecessary_null_comparison, prefer_if_null_operators, empty_catches, avoid_print, unnecessary_brace_in_string_interps, void_checks, unused_element, unrelated_type_equality_checks, prefer_const_constructors_in_immutables, use_super_parameters
 
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 // import 'package:woocommerce/api_service.dart';
 import 'package:dio/dio.dart';
 import 'package:woocommerce/helper/APIwork.dart';
@@ -15,13 +14,17 @@ import 'package:woocommerce/styles/button-styles.dart';
 import 'package:woocommerce_api/woocommerce_api.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final int? index;
+
+  const HomePage({Key? key, this.index}) : super(key: key);
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
+  late int index;
+
   var _currentIndex = 0;
   late List<Widget> _pages;
   ManageCart cart = ManageCart();
@@ -31,8 +34,11 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     __getCartProducts();
+    index = widget.index ?? 0;
+    updateCurrentIndex(index);
+    print(index);
     _pages = [
-      HomeScreen(updateCartCounts: updateCartCount),
+      HomeScreen(),
       SearchScreen(updateCurrentIndex: updateCurrentIndex),
       CartScreen(),
       ProfileScreen(),
@@ -49,12 +55,6 @@ class _HomePageState extends State<HomePage> {
   void updateCurrentIndex(int newIndex) {
     setState(() {
       _currentIndex = newIndex;
-    });
-  }
-
-  void updateCartCount(int count) {
-    setState(() {
-      cartItemsCount = count;
     });
   }
 
@@ -113,10 +113,6 @@ class _HomePageState extends State<HomePage> {
 }
 
 class HomeScreen extends StatefulWidget {
-  final Function(int) updateCartCounts;
-
-  HomeScreen({required this.updateCartCounts});
-
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -218,6 +214,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: 1000,
       color: Colors.green.shade100,
       child: SafeArea(
         child: SingleChildScrollView(
@@ -424,11 +421,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) => ProductScreen(
-                                          productId: newFeaturedProducts[index]
-                                              ['id'],
-                                          updateCartCountCallback:
-                                              widget.updateCartCounts,
-                                        ),
+                                            productId:
+                                                newFeaturedProducts[index]
+                                                    ['id']),
                                       ),
                                     );
                                   },
@@ -575,10 +570,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   MaterialPageRoute(
                                                     builder: (context) =>
                                                         ProductScreen(
-                                                      productId:
-                                                          newFeaturedProducts[
-                                                              index]['id'],
-                                                    ),
+                                                            productId:
+                                                                newFeaturedProducts[
+                                                                        index]
+                                                                    ['id']),
                                                   ),
                                                 );
                                               },
@@ -739,9 +734,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => ProductScreen(
-                                        productId: newMethodProducts[index]
-                                            ['id'],
-                                      ),
+                                          productId: newMethodProducts[index]
+                                              ['id']),
                                     ),
                                   );
                                 },
@@ -1014,15 +1008,416 @@ class _SearchScreenState extends State<SearchScreen> {
 
 // ------------------ Experimental -----------------//
 
-class CartScreen extends StatelessWidget {
+// ------------------- Cart Screen ----------------- //
+
+class CartScreen extends StatefulWidget {
+  @override
+  State<CartScreen> createState() => _CartScreenState();
+}
+
+class _CartScreenState extends State<CartScreen> {
+  late List cartItems = [];
+  ManageCart cart = ManageCart();
+  APIWorks apiWorks = APIWorks();
+  bool isLoading = true;
+  List<dynamic> cartDetails = [];
+  late double subTotal = 0;
+  late double grandTotal = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    __getcartItems();
+  }
+
+  __getcartItems() async {
+    final getCartItems = await cart.getCartList();
+    final List cartProductsLists = [];
+    double totalPrice = 0.0;
+    for (int productId in getCartItems) {
+      final productDetails = await apiWorks.fetchProductDetails(productId);
+      if (productDetails != 'error') {
+        cartProductsLists.add(productDetails);
+        double productPrice =
+            double.tryParse(productDetails['price'] ?? '0.0') ?? 0.0;
+        totalPrice += productPrice;
+      }
+    }
+    setState(() {
+      cartItems = getCartItems;
+      cartDetails = cartProductsLists;
+      subTotal = double.parse(totalPrice.toStringAsFixed(2));
+      grandTotal = double.parse((subTotal + 60).toStringAsFixed(2));
+      isLoading = false;
+    });
+  }
+
+  __deleteTheCartProduct(context, id) async {
+    ManageCart cart = ManageCart();
+    String response = await cart.removeProductFromCart(id);
+    setState(() {
+      isLoading = true;
+      __getcartItems();
+    });
+    if (response == 'Product is not exist') {
+      __showMessage(context, 'Product is not exist', 'warning');
+    } else {
+      __showMessage(context, 'Product removed from cart.', 'success');
+    }
+  }
+
+  Future<void> _showDeleteConfirmationDialog(
+      BuildContext context, int index) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(16.0)),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.warning,
+                color: Colors.orange,
+                size: 18,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Warning',
+                style: TextStyle(fontSize: 18),
+              ),
+            ],
+          ),
+          content: Text('Are you sure you want to delete this item?'),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromARGB(255, 185, 150, 35),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                  ),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    __deleteTheCartProduct(context, index);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromARGB(255, 255, 87, 75),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                  ),
+                  child: Text(
+                    'Delete',
+                    style: TextStyle(
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> __showMessage(BuildContext context, message, res) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(16.0)),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                res == 'warning' ? Icons.warning : Icons.done,
+                color: res == 'warning' ? Colors.orange : Colors.green.shade500,
+                size: 18,
+              ),
+              SizedBox(width: 8),
+              Text(
+                res == 'warning' ? 'Warning' : 'Success',
+                style: TextStyle(fontSize: 18),
+              ),
+            ],
+          ),
+          content: Text(message),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromARGB(255, 26, 102, 153),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                  ),
+                  child: Text(
+                    'OK',
+                    style: TextStyle(
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text('Cart Screen'),
+    return Container(
+      height: 800,
+      color: Colors.green.shade100,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: 20.0,
+                  right: 20.0,
+                  bottom: 20.0,
+                ),
+                child: Text(
+                  "Your Cart",
+                  style: TextStyle(
+                    fontFamily: 'Kanit',
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              isLoading
+                  ? Center(
+                      child: Container(
+                        height: 50,
+                        width: 50,
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  : cartItems.isEmpty
+                      ? Center(
+                          child: Text('No Products Added To Cart'),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Center(
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              itemCount: cartItems.length,
+                              itemBuilder: (context, index) {
+                                final image =
+                                    cartDetails[index]['images'][0]['src'];
+                                return GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ProductScreen(
+                                            productId: cartDetails[index]
+                                                ['id']),
+                                      ),
+                                    );
+                                  },
+                                  child: ListTile(
+                                    leading: Container(
+                                      height: 50,
+                                      width: 50,
+                                      decoration: BoxDecoration(
+                                        image: DecorationImage(
+                                          image: NetworkImage(image ?? ''),
+                                          fit: BoxFit.fitHeight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(18),
+                                      ),
+                                      child: image != null
+                                          ? null
+                                          : Center(
+                                              child: Icon(
+                                                Icons.error,
+                                                color: Colors.red,
+                                                size: 30,
+                                              ),
+                                            ),
+                                    ),
+                                    title: Text(
+                                      cartDetails[index]['name'],
+                                      style: TextStyle(
+                                        fontFamily: 'kanit',
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    subtitle:
+                                        Text('₹${cartDetails[index]['price']}'),
+                                    trailing: IconButton(
+                                      icon: Icon(
+                                        Icons.delete_forever_sharp,
+                                        color: Colors.red,
+                                      ),
+                                      onPressed: () {
+                                        _showDeleteConfirmationDialog(
+                                          context,
+                                          cartDetails[index]['id'],
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+              isLoading
+                  ? Center(
+                      child: Container(
+                        height: 0,
+                        width: 0,
+                      ),
+                    )
+                  : Align(
+                      alignment: Alignment.bottomRight,
+                      child: Padding(
+                        padding: EdgeInsets.all(10.0),
+                        child: Container(
+                          height: 100,
+                          width: 200,
+                          decoration: BoxDecoration(
+                            // color: Colors.red.shade200,
+                            borderRadius: BorderRadius.circular(5),
+                            // border: Border.all(
+                            //   color: Colors.black,
+                            //   width: 1.0,
+                            // ),
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.all(10.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Subtotal',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      subTotal.toString(),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Delivery',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      '60.00',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Divider(
+                                  color: Colors.black,
+                                  thickness: 1.0,
+                                  height: 10.0,
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Total',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18.0,
+                                      ),
+                                    ),
+                                    Text(
+                                      grandTotal.toString(),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18.0,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+              isLoading
+                  ? Container(
+                      height: 0,
+                      width: 0,
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.only(right: 20.0),
+                      child: Align(
+                        alignment: Alignment.bottomRight,
+                        child: ElevatedButton(
+                          style: placeOrder,
+                          onPressed: () {},
+                          child: Text('Place Order'),
+                        ),
+                      ),
+                    )
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
 
+// ------------------- Cart Screen ----------------- //
 class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -1134,7 +1529,7 @@ AppBar screenAppBar(int cartItemCount) {
     backgroundColor: Colors.green.shade400,
     title: Container(
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             "Woocom",
@@ -1144,42 +1539,42 @@ AppBar screenAppBar(int cartItemCount) {
               fontFamily: 'Kanit',
             ),
           ),
-          Stack(
-            alignment: Alignment.topRight,
-            children: [
-              IconButton(
-                onPressed: () {},
-                icon: Icon(
-                  Icons.shopping_cart_outlined,
-                  color: Colors.black,
-                ),
-              ),
-              if (cartItemCount > 0)
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    padding: EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color.fromARGB(255, 255, 255, 255),
-                    ),
-                    child: Padding(
-                      padding: cartItemCount > 9
-                          ? EdgeInsets.all(1.0)
-                          : EdgeInsets.all(3.0),
-                      child: Text(
-                        cartItemCount > 99 ? '99+' : '$cartItemCount',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: cartItemCount > 99 ? 10 : 12,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
+          // Stack(
+          //   alignment: Alignment.topRight,
+          //   children: [
+          //     IconButton(
+          //       onPressed: () {},
+          //       icon: Icon(
+          //         Icons.shopping_cart_outlined,
+          //         color: Colors.black,
+          //       ),
+          //     ),
+          //     if (cartItemCount > 0)
+          //       Positioned(
+          //         right: 0,
+          //         top: 0,
+          //         child: Container(
+          //           padding: EdgeInsets.all(2),
+          //           decoration: BoxDecoration(
+          //             shape: BoxShape.circle,
+          //             color: Color.fromARGB(255, 255, 255, 255),
+          //           ),
+          //           child: Padding(
+          //             padding: cartItemCount > 9
+          //                 ? EdgeInsets.all(1.0)
+          //                 : EdgeInsets.all(3.0),
+          //             child: Text(
+          //               cartItemCount > 99 ? '99+' : '$cartItemCount',
+          //               style: TextStyle(
+          //                 color: Colors.black,
+          //                 fontSize: cartItemCount > 99 ? 10 : 12,
+          //               ),
+          //             ),
+          //           ),
+          //         ),
+          //       ),
+          //   ],
+          // ),
         ],
       ),
     ),

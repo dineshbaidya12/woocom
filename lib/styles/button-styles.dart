@@ -14,6 +14,17 @@ final ButtonStyle moreDetails = ElevatedButton.styleFrom(
     ),
   ),
 );
+final ButtonStyle placeOrder = ElevatedButton.styleFrom(
+  minimumSize: const Size(150, 50),
+  backgroundColor: Color.fromARGB(255, 8, 167, 179),
+  elevation: 0,
+  foregroundColor: Colors.black,
+  shape: const RoundedRectangleBorder(
+    borderRadius: BorderRadius.all(
+      Radius.circular(5),
+    ),
+  ),
+);
 
 final ButtonStyle addToCart = ElevatedButton.styleFrom(
   minimumSize: const Size(140, 50),
