@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors, avoid_unnecessary_containers, sized_box_for_whitespace, use_key_in_widget_constructors, prefer_interpolation_to_compose_strings, unused_import, unused_local_variable, prefer_const_declarations, unnecessary_string_interpolations, unnecessary_cast, unnecessary_null_comparison, prefer_if_null_operators, empty_catches, avoid_print, unnecessary_brace_in_string_interps, void_checks, unused_element, unrelated_type_equality_checks, prefer_const_constructors_in_immutables, use_super_parameters
 
 import 'dart:convert';
+// import 'dart:ffi';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
@@ -9,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:woocommerce/helper/APIwork.dart';
 import 'package:woocommerce/manage_cart.dart';
+import 'package:woocommerce/manage_customers.dart';
 import 'package:woocommerce/pages/productpage.dart';
 import 'package:woocommerce/styles/button-styles.dart';
 import 'package:woocommerce_api/woocommerce_api.dart';
@@ -36,12 +38,13 @@ class _HomePageState extends State<HomePage> {
     __getCartProducts();
     index = widget.index ?? 0;
     updateCurrentIndex(index);
-    print(index);
     _pages = [
       HomeScreen(),
       SearchScreen(updateCurrentIndex: updateCurrentIndex),
       CartScreen(),
       ProfileScreen(),
+      RegisterScreen(),
+      LoginScreen()
     ];
   }
 
@@ -65,7 +68,7 @@ class _HomePageState extends State<HomePage> {
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.yellow[50],
-        currentIndex: _currentIndex,
+        currentIndex: _currentIndex > 3 ? 3 : _currentIndex,
         onTap: (index) {
           setState(() {
             _currentIndex = index;
@@ -1201,8 +1204,8 @@ class _CartScreenState extends State<CartScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.only(
-                  left: 20.0,
-                  right: 20.0,
+                  left: 5.0,
+                  right: 5.0,
                   bottom: 20.0,
                 ),
                 child: Text(
@@ -1228,7 +1231,7 @@ class _CartScreenState extends State<CartScreen> {
                           child: Text('No Products Added To Cart'),
                         )
                       : Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(2.0),
                           child: Center(
                             child: ListView.builder(
                               shrinkWrap: true,
@@ -1306,109 +1309,120 @@ class _CartScreenState extends State<CartScreen> {
                         width: 0,
                       ),
                     )
-                  : Align(
-                      alignment: Alignment.bottomRight,
-                      child: Padding(
-                        padding: EdgeInsets.all(10.0),
-                        child: Container(
-                          height: 100,
-                          width: 200,
-                          decoration: BoxDecoration(
-                            // color: Colors.red.shade200,
-                            borderRadius: BorderRadius.circular(5),
-                            // border: Border.all(
-                            //   color: Colors.black,
-                            //   width: 1.0,
-                            // ),
-                          ),
+                  : cartItems.isEmpty
+                      ? Container(
+                          height: 0,
+                          width: 0,
+                        )
+                      : Align(
+                          alignment: Alignment.bottomRight,
                           child: Padding(
                             padding: EdgeInsets.all(10.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
+                            child: Container(
+                              height: 100,
+                              width: 200,
+                              decoration: BoxDecoration(
+                                // color: Colors.red.shade200,
+                                borderRadius: BorderRadius.circular(5),
+                                // border: Border.all(
+                                //   color: Colors.black,
+                                //   width: 1.0,
+                                // ),
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.all(10.0),
+                                child: Column(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
-                                      'Subtotal',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Subtotal',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          subTotal.toString(),
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    Text(
-                                      subTotal.toString(),
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Delivery',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          '60.00',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Divider(
+                                      color: Colors.black,
+                                      thickness: 1.0,
+                                      height: 10.0,
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Total',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18.0,
+                                          ),
+                                        ),
+                                        Text(
+                                          grandTotal.toString(),
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18.0,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Delivery',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Text(
-                                      '60.00',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Divider(
-                                  color: Colors.black,
-                                  thickness: 1.0,
-                                  height: 10.0,
-                                ),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Total',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18.0,
-                                      ),
-                                    ),
-                                    Text(
-                                      grandTotal.toString(),
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18.0,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
               isLoading
                   ? Container(
                       height: 0,
                       width: 0,
                     )
-                  : Padding(
-                      padding: const EdgeInsets.only(right: 20.0),
-                      child: Align(
-                        alignment: Alignment.bottomRight,
-                        child: ElevatedButton(
-                          style: placeOrder,
-                          onPressed: () {},
-                          child: Text('Place Order'),
-                        ),
-                      ),
-                    )
+                  : cartItems.isEmpty
+                      ? Container(
+                          height: 0,
+                          width: 0,
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.only(right: 20.0),
+                          child: Align(
+                            alignment: Alignment.bottomRight,
+                            child: ElevatedButton(
+                              style: placeOrder,
+                              onPressed: () {},
+                              child: Text('Place Order'),
+                            ),
+                          ),
+                        )
             ],
           ),
         ),
@@ -1418,14 +1432,438 @@ class _CartScreenState extends State<CartScreen> {
 }
 
 // ------------------- Cart Screen ----------------- //
-class ProfileScreen extends StatelessWidget {
+
+// ------------------- Register Screen ----------------- //
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
+
+  @override
+  State<RegisterScreen> createState() => _RegistrationScreenState();
+}
+
+class _RegistrationScreenState extends State<RegisterScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text('Profile Screen'),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Registration Form'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _firstNameController,
+                decoration: InputDecoration(labelText: 'First Name'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your first name';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _lastNameController,
+                decoration: InputDecoration(labelText: 'Last Name'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your last name';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _emailController,
+                decoration: InputDecoration(labelText: 'Email'),
+                validator: (value) {
+                  if (value == null || value.isEmpty || !value.contains('@')) {
+                    return 'Please enter a valid email address';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _passwordController,
+                decoration: InputDecoration(labelText: 'Password'),
+                obscureText: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a password';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    // Form is valid, proceed with registration logic
+                    // Access entered values using _firstNameController.text, _lastNameController.text, etc.
+                    // Add your registration logic here
+                    print('Registration successful!');
+                  }
+                },
+                child: Text('Register'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
+// ------------------- Register Screen ----------------- //
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Container(
+        child: Text('Login'),
+      ),
+    );
+  }
+}
+
+// ------------------- Profile Screen ----------------- //
+class ProfileScreen extends StatefulWidget {
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  ManageCustomer customer = ManageCustomer();
+  final _formKey = GlobalKey<FormState>();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _streetAddress = TextEditingController();
+  final _city = TextEditingController();
+  final _stateController = TextEditingController();
+  final _pincodeController = TextEditingController();
+  final _emailController = TextEditingController();
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _getUserInfo();
+  }
+
+  void _getUserInfo() async {
+    try {
+      ManageCustomer customer = ManageCustomer();
+      final userInfoList = await customer.getUserInfoAsList();
+
+      print(userInfoList);
+      if (userInfoList.isNotEmpty) {
+        _firstNameController.text = userInfoList[0].toString();
+        _lastNameController.text = userInfoList[1].toString();
+        _city.text = userInfoList[2].toString();
+        _stateController.text = userInfoList[3].toString();
+        _pincodeController.text = userInfoList[4].toString();
+        _emailController.text = userInfoList[5].toString();
+        _streetAddress.text = userInfoList[6].toString();
+      }
+
+      setState(() {
+        isLoading = false;
+      });
+    } catch (e) {
+      print("Error parsing JSON: $e");
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  saveDataToSharedPref() {
+    ManageCustomer customer = ManageCustomer();
+
+    String firstName = _firstNameController.text;
+    String lastName = _lastNameController.text;
+    String city = _city.text;
+    String state = _stateController.text;
+    String pincode = _pincodeController.text;
+    String email = _emailController.text;
+    String streetAddress = _streetAddress.text;
+
+    customer.saveUserInfo({
+      'firstname': firstName,
+      'lastname': lastName,
+      'city': city,
+      'state': state,
+      'pincode': pincode,
+      'email': email,
+      'streetaddress': streetAddress,
+    });
+
+    __showMessage('User Information Successfully Inserted', 'success');
+  }
+
+  Future<void> __showMessage(message, res) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(16.0)),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                res == 'warning' ? Icons.warning : Icons.done,
+                color: res == 'warning' ? Colors.orange : Colors.green.shade500,
+                size: 18,
+              ),
+              SizedBox(width: 8),
+              Text(
+                res == 'warning' ? 'Warning' : 'Success',
+                style: TextStyle(fontSize: 18),
+              ),
+            ],
+          ),
+          content: Text(message),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromARGB(255, 26, 102, 153),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                  ),
+                  child: Text(
+                    'OK',
+                    style: TextStyle(
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: isLoading
+          ? Padding(
+              padding: const EdgeInsets.only(top: 25.0),
+              child: Center(
+                child: Container(
+                  height: 30,
+                  width: 30,
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+            )
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    Text(
+                      "Save Your Information",
+                      style: TextStyle(
+                        fontFamily: 'kanit',
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Divider(
+                      thickness: 1.0,
+                      height: 10.0,
+                      color: Colors.white,
+                    ),
+                    TextFormField(
+                      controller: _firstNameController,
+                      decoration: InputDecoration(
+                        labelText: 'First Name',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your first name';
+                        }
+                        return null;
+                      },
+                    ),
+                    Divider(
+                      thickness: 1.0,
+                      height: 10.0,
+                      color: Colors.white,
+                    ),
+                    TextFormField(
+                      controller: _lastNameController,
+                      decoration: InputDecoration(
+                        labelText: 'Last Name',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your last name';
+                        }
+                        return null;
+                      },
+                    ),
+                    Divider(
+                      thickness: 1.0,
+                      height: 10.0,
+                      color: Colors.white,
+                    ),
+                    TextFormField(
+                      controller: _city,
+                      decoration: InputDecoration(
+                        labelText: 'City',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your city';
+                        }
+                        return null;
+                      },
+                    ),
+                    Divider(
+                      thickness: 1.0,
+                      height: 10.0,
+                      color: Colors.white,
+                    ),
+                    TextFormField(
+                      controller: _stateController,
+                      decoration: InputDecoration(
+                        labelText: 'State',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your state';
+                        }
+                        return null;
+                      },
+                    ),
+                    Divider(
+                      thickness: 1.0,
+                      height: 10.0,
+                      color: Colors.white,
+                    ),
+                    TextFormField(
+                      controller: _pincodeController,
+                      decoration: InputDecoration(
+                        labelText: 'Pincode',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your Pincode';
+                        }
+                        return null;
+                      },
+                    ),
+                    Divider(
+                      thickness: 1.0,
+                      height: 10.0,
+                      color: Colors.white,
+                    ),
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your email';
+                        }
+                        final emailRegex = RegExp(
+                          r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$',
+                        );
+                        if (!emailRegex.hasMatch(value)) {
+                          return 'Please enter a valid email address';
+                        }
+                        return null;
+                      },
+                    ),
+                    Divider(
+                      thickness: 1.0,
+                      height: 10.0,
+                      color: Colors.white,
+                    ),
+                    TextFormField(
+                      controller: _streetAddress,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: 'Street Address',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your street address';
+                        }
+                        return null;
+                      },
+                    ),
+                    Divider(
+                      thickness: 1.0,
+                      height: 10.0,
+                      color: Colors.white,
+                    ),
+                    ElevatedButton(
+                      style: moreDetails,
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          saveDataToSharedPref();
+                        }
+                      },
+                      child: Text('Save'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+    );
+  }
+}
+// ------------------- Profile Screen ----------------- //
 
 // --------------- Models -----------------//
 class Product {

@@ -14,6 +14,7 @@ final ButtonStyle moreDetails = ElevatedButton.styleFrom(
     ),
   ),
 );
+
 final ButtonStyle placeOrder = ElevatedButton.styleFrom(
   minimumSize: const Size(150, 50),
   backgroundColor: Color.fromARGB(255, 8, 167, 179),
@@ -51,6 +52,30 @@ final ButtonStyle outOfStock = ElevatedButton.styleFrom(
 final ButtonStyle seeAllProduct = ElevatedButton.styleFrom(
   minimumSize: const Size(120, 30),
   backgroundColor: const Color.fromARGB(255, 7, 111, 172),
+  elevation: 0,
+  foregroundColor: Colors.black,
+  shape: const RoundedRectangleBorder(
+    borderRadius: BorderRadius.all(
+      Radius.circular(5),
+    ),
+  ),
+);
+
+final ButtonStyle register = ElevatedButton.styleFrom(
+  minimumSize: const Size(200, 45),
+  backgroundColor: Color.fromARGB(255, 236, 188, 56),
+  elevation: 0,
+  foregroundColor: Colors.black,
+  shape: const RoundedRectangleBorder(
+    borderRadius: BorderRadius.all(
+      Radius.circular(5),
+    ),
+  ),
+);
+
+final ButtonStyle login = ElevatedButton.styleFrom(
+  minimumSize: const Size(200, 45),
+  backgroundColor: Color.fromARGB(255, 18, 126, 228),
   elevation: 0,
   foregroundColor: Colors.black,
   shape: const RoundedRectangleBorder(
