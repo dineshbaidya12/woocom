@@ -11,6 +11,7 @@ import 'package:dio/dio.dart';
 import 'package:woocommerce/helper/APIwork.dart';
 import 'package:woocommerce/manage_cart.dart';
 import 'package:woocommerce/manage_customers.dart';
+import 'package:woocommerce/pages/order.dart';
 import 'package:woocommerce/pages/productpage.dart';
 import 'package:woocommerce/styles/button-styles.dart';
 import 'package:woocommerce_api/woocommerce_api.dart';
@@ -595,7 +596,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
 
-              //
               Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Text(
@@ -1346,7 +1346,7 @@ class _CartScreenState extends State<CartScreen> {
                                           ),
                                         ),
                                         Text(
-                                          subTotal.toString(),
+                                          '₹' + subTotal.toString(),
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -1364,7 +1364,7 @@ class _CartScreenState extends State<CartScreen> {
                                           ),
                                         ),
                                         Text(
-                                          '60.00',
+                                          '₹60.00',
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -1388,7 +1388,7 @@ class _CartScreenState extends State<CartScreen> {
                                           ),
                                         ),
                                         Text(
-                                          grandTotal.toString(),
+                                          '₹' + grandTotal.toString(),
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 18.0,
@@ -1418,7 +1418,15 @@ class _CartScreenState extends State<CartScreen> {
                             alignment: Alignment.bottomRight,
                             child: ElevatedButton(
                               style: placeOrder,
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        PlaceOrder(currentPage: 0),
+                                  ),
+                                );
+                              },
                               child: Text('Place Order'),
                             ),
                           ),

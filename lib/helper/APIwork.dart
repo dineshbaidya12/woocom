@@ -7,10 +7,6 @@ class APIWorks {
   final String baseUrl = 'http://dinesh/woocom';
   final String consumerKey = 'ck_b19054371ef70980d1e72c916270533e8d85e267';
   final String consumerSecret = 'cs_ffd3db8003cc760c9025c5da768659342d1c1f09';
-  // final String baseUrl =
-  //     'http://suvasis-creative-interior-design.great-site.net/woocom';
-  // final String consumerKey = 'ck_a3275fcf3ce72da7177c187b4bfb7738064d71fa';
-  // final String consumerSecret = 'cs_34eef44637c4d922552a503b128b6338d6da7169';
 
   late WooCommerceAPI wooCommerce;
 
@@ -107,6 +103,26 @@ class APIWorks {
       return categoryList;
     } catch (e) {
       throw Exception('Failed to load Category: $e');
+    }
+  }
+
+  Future<dynamic> placeOrder(Map<String, dynamic> orderData) async {
+    try {
+      final response = await wooCommerce.postAsync('orders', orderData);
+
+      print('Status Code: ${response.statusCode}');
+      print('Response Body: ${response.data}');
+
+      if (response.statusCode == 201) {
+        return response.data;
+      } else {
+        print('Failed to place orderd. Status code: ${response.statusCode}');
+        print('Response body: ${response.data}');
+        return 'errors : ${response.data}';
+      }
+    } catch (e) {
+      print('Exception: $e');
+      return 'error $e';
     }
   }
 }

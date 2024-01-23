@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ManageCustomer {
   final String loginStatusConsumerKey = 'loginStatus';
   final String userinfo = 'userinformation';
+  final String orderInfo = 'address';
 
   Future<String> isUserLoggedIn() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -40,6 +41,41 @@ class ManageCustomer {
       return userInfoList;
     } else {
       return [];
+    }
+  }
+
+  Future<void> saveOrderInfo(Map<String, String> orderInformation) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String userInfoString = json.encode(orderInformation);
+    await prefs.setString(orderInfo, userInfoString);
+  }
+
+  Future<void> saveOrderInfoShipping(
+      Map<String, String> orderInformation) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    String? existingInfoString = prefs.getString(orderInfo);
+
+    Map<String, dynamic> existingInfo = {};
+    if (existingInfoString != null && existingInfoString.isNotEmpty) {
+      existingInfo = json.decode(existingInfoString);
+    }
+    existingInfo.addAll(orderInformation);
+
+    String updatedInfoString = json.encode(existingInfo);
+    await prefs.setString(orderInfo, updatedInfoString);
+  }
+
+  Future<Map<String, String>> getOrderInfoAsMap() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userInfoString = prefs.getString(orderInfo);
+    if (userInfoString != null && userInfoString.isNotEmpty) {
+      Map<String, dynamic> orderInfo = json.decode(userInfoString);
+      Map<String, String> userInfoMap = orderInfo
+          .map((key, value) => MapEntry<String, String>(key, value.toString()));
+      return userInfoMap;
+    } else {
+      return {};
     }
   }
 }
