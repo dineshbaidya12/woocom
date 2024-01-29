@@ -1,4 +1,9 @@
-// ignore_for_file: unused_element
+// ignore_for_file: unused_element, unused_local_variable, unused_import
+
+import 'package:flutter_wp_woocommerce/models/order_payload.dart';
+import 'package:flutter_wp_woocommerce/woocommerce.dart';
+import 'package:flutter_wp_woocommerce/models/order.dart';
+import 'package:woocommerce/manage_customers.dart';
 
 import 'package:woocommerce/pages/homepage.dart';
 import 'package:woocommerce_api/woocommerce_api.dart';
@@ -9,10 +14,17 @@ class APIWorks {
   final String consumerSecret = 'cs_ffd3db8003cc760c9025c5da768659342d1c1f09';
 
   late WooCommerceAPI wooCommerce;
+  late WooCommerce woocomerceSecond;
 
   APIWorks() {
     wooCommerce = WooCommerceAPI(
       url: baseUrl,
+      consumerKey: consumerKey,
+      consumerSecret: consumerSecret,
+    );
+
+    woocomerceSecond = WooCommerce(
+      baseUrl: baseUrl,
       consumerKey: consumerKey,
       consumerSecret: consumerSecret,
     );
@@ -106,20 +118,50 @@ class APIWorks {
     }
   }
 
-  Future<dynamic> placeOrder(Map<String, dynamic> orderData) async {
+  Future<dynamic> placeOrder(orderData) async {
     try {
-      final response = await wooCommerce.postAsync('orders', orderData);
+      // Map<String, dynamic> orderData = {
+      //   "payment_method": "bacs",
+      //   "payment_method_title": "Direct Bank Transfer",
+      //   "set_paid": true,
+      //   "billing": {
+      //     "first_name": "John",
+      //     "last_name": "Doe",
+      //     "address_1": "969 Market",
+      //     "address_2": "",
+      //     "city": "San Francisco",
+      //     "state": "CA",
+      //     "postcode": "94103",
+      //     "country": "US",
+      //     "email": "john.doe@example.com",
+      //     "phone": "(555) 555-5555",
+      //   },
+      //   "shipping": {
+      //     "first_name": "John",
+      //     "last_name": "Doe",
+      //     "address_1": "969 Market",
+      //     "address_2": "",
+      //     "city": "San Francisco",
+      //     "state": "CA",
+      //     "postcode": "94103",
+      //     "country": "US",
+      //   },
+      //   "line_items": [
+      //     {"product_id": 587, "quantity": 2},
+      //   ],
+      //   "shipping_lines": [
+      //     {
+      //       "method_id": "flat_rate",
+      //       "method_title": "Flat Rate",
+      //       "total": "10.00"
+      //     },
+      //   ],
+      // };
 
-      print('Status Code: ${response.statusCode}');
-      print('Response Body: ${response.data}');
+      WooOrder createdOrder =
+          await woocomerceSecond.createOrder(orderData as WooOrderPayload);
 
-      if (response.statusCode == 201) {
-        return response.data;
-      } else {
-        print('Failed to place orderd. Status code: ${response.statusCode}');
-        print('Response body: ${response.data}');
-        return 'errors : ${response.data}';
-      }
+      return createdOrder;
     } catch (e) {
       print('Exception: $e');
       return 'error $e';

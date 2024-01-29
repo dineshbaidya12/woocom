@@ -1,6 +1,8 @@
-// ignore_for_file: prefer_const_constructors, avoid_unnecessary_containers, prefer_const_literals_to_create_immutables, prefer_final_fields, use_key_in_widget_constructors, prefer_const_constructors_in_immutables, unused_local_variable, await_only_futures, unused_field, sized_box_for_whitespace, avoid_print
+// ignore_for_file: prefer_const_constructors, avoid_unnecessary_containers, prefer_const_literals_to_create_immutables, prefer_final_fields, use_key_in_widget_constructors, prefer_const_constructors_in_immutables, unused_local_variable, await_only_futures, unused_field, sized_box_for_whitespace, avoid_print, unnecessary_new, prefer_collection_literals
 
 import 'package:flutter/material.dart';
+import 'package:flutter_wp_woocommerce/models/order.dart';
+import 'package:flutter_wp_woocommerce/models/order_payload.dart';
 import 'package:woocommerce/helper/APIwork.dart';
 import 'package:woocommerce/manage_cart.dart';
 import 'package:woocommerce/manage_customers.dart';
@@ -604,6 +606,56 @@ class _ChooseShippingAddressState extends State<ChooseShippingAddress> {
 
 // -------- Choose Shipping Address ----------//
 
+// order class
+
+// class Ordermodel {
+//   int? customerId;
+//   String? paymentmethod;
+//   String? paymentmethodtitle;
+//   bool? setPaid;
+//   String? transactionId;
+//   List<LineItems>? lineItems;
+
+//   int? orderId;
+//   int? orderNumber;
+//   String? status;
+//   DateTime? orderDate;
+//   Shipping? shipping;
+
+//   Ordermodel({
+//     this.customerId,
+//     this.paymentmethod,
+//     this.paymentmethodtitle,
+//     this.setPaid,
+//     this.transactionId,
+//     this.lineItems,
+//     this.orderId,
+//     this.orderNumber,
+//     this.orderDate,
+//     this.shipping,
+//   });
+
+//   Ordermodel.fromJson(Map<String, dynamic> json) {
+//     customerId = json['customerId'] ?? 1;
+//     orderId = json['id'];
+//     status = json['status'];
+//     orderNumber = json['order_key'];
+//     orderDate = DateTime.parse(json['date_created']);
+//   }
+
+//   Map<String, dynamic> toJson() {
+//     final Map<String, dynamic> data = new Map<String, dynamic>();
+//     data['customer_id'] = customerId;
+//     data['payment_method'] = customerId;
+//     data['payment_method_title'] = customerId;
+//     data['set_paid'] = customerId;
+//     data['transaction_id'] = customerId;
+//     data['shipping'] = customerId;
+//     data['line_items'] = LineItems.map((v) => v.toJson()).toList();
+//     return data;
+//   }
+// }
+
 // ------------ Choose Payment ---------- //
 
 class ChoosePayment extends StatefulWidget {
@@ -638,56 +690,58 @@ class _ChoosePaymentState extends State<ChoosePayment> {
     List<int> products = await cart.getCartList();
     print(products);
 
-    Map<String, dynamic> orderData = {
-      'payment_method': 'cod',
-      'payment_method_title': 'Cash On Devliery',
-      'set_paid': true,
-      'billing': {
-        'first_name': 'John',
-        'last_name': 'Doe',
-        'address_1': '969 Market',
-        'address_2': '',
-        'city': 'San Francisco',
-        'state': 'CA',
-        'postcode': '94103',
-        'country': 'US',
-        'email': 'john.doe@example.com',
-        'phone': '(555) 555-5555',
+    Map<String, dynamic> data = {
+      "payment_method": "bacs",
+      "payment_method_title": "Direct Bank Transfer",
+      "set_paid": true,
+      "billing": {
+        "first_name": "John",
+        "last_name": "Doe",
+        "address_1": "969 Market",
+        "address_2": "",
+        "city": "San Francisco",
+        "state": "CA",
+        "postcode": "94103",
+        "country": "US",
+        "email": "john.doe@example.com",
+        "phone": "(555) 555-5555"
       },
-      'shipping': {
-        'first_name': 'John',
-        'last_name': 'Doe',
-        'address_1': '969 Market',
-        'address_2': '',
-        'city': 'San Francisco',
-        'state': 'CA',
-        'postcode': '94103',
-        'country': 'US',
+      "shipping": {
+        "first_name": "John",
+        "last_name": "Doe",
+        "address_1": "969 Market",
+        "address_2": "",
+        "city": "San Francisco",
+        "state": "CA",
+        "postcode": "94103",
+        "country": "US"
       },
-      'line_items': [
-        {'product_id': 589, 'quantity': 1},
-        {'product_id': 587, 'quantity': 1},
+      "line_items": [
+        {"product_id": 587, "quantity": 1}
       ],
-      'shipping_lines': [
+      "shipping_lines": [
         {
-          'method_id': 'flat_rate',
-          'method_title': 'Flat Rate',
-          'total': '10.00',
-        },
-      ],
+          "method_id": "flat_rate",
+          "method_title": "Flat Rate",
+          "total": "10.00"
+        }
+      ]
     };
 
-    dynamic result = await apiWorks.placeOrder(orderData);
+    WooOrderPayload wooPayload = WooOrderPayload.fromJson(data);
+    dynamic result = await apiWorks.placeOrder(wooPayload);
 
     setState(() {
       resultsDyn = result;
     });
 
-    if (result != 'error') {
-      print('Order placed successfully! Order ID: $result');
-    } else {
-      print(result);
-    }
+    print(result);
+
+    // if (result != 'error') {
+    //   print('result :  $result');
+    // } else {
+    //   print(result);
+    // }
   }
 
   @override
